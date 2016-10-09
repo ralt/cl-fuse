@@ -32,19 +32,8 @@
 
 (define-foreign-library libfuse 
   (t (:default "libfuse")))
-(define-foreign-library 
-  fuse-launcher 
-  (t (:or
-       #.(namestring (file-here "libfuse-launcher" "so"))
-       #+ccl #.(ccl:native-translated-namestring (file-here "libfuse-launcher" "so"))
-       "libfuse-launcher"
-       #.(file-here "libfuse-launcher")
-       #.(file-here "libfuse-launcher" "so")
-       #.(namestring (file-here "libfuse-launcher"))
-       )))
 
 (use-foreign-library libfuse)
-(use-foreign-library fuse-launcher)
 
 (defcfun "fuse_mount" :pointer
   (mountpoint :pointer)
@@ -64,13 +53,6 @@
 (defcfun "fuse_new" :pointer
   (ch :pointer)
   (args :int)
-  (op :pointer)
-  (op_size size)
-  (user_data :pointer))
-
-(defcfun "fuse_new_proxy" :pointer
-  (ch :pointer)
-  (args :pointer)
   (op :pointer)
   (op_size size)
   (user_data :pointer))
@@ -177,13 +159,13 @@
         (when (= (pointer-address chan-fuse) 0)
               (return-from fuse-main-lisp nil)
               )
-        (setf data-fuse 
-              (fuse-new-proxy chan-fuse 
-                               args-fuse
-                               operation-list 
-                               (foreign-type-size 'fuse-ops)
-                               (null-pointer)
-                               ))
+        (setf data-fuse
+              (fuse-new chan-fuse
+                        args-fuse
+                        operation-list
+                        (foreign-type-size 'fuse-ops)
+                        (null-pointer)
+                        ))
         (when (= (pointer-address data-fuse) 0)
               (fuse-unmount (mem-ref mountpoint :pointer) chan-fuse)
               (return-from fuse-main-lisp nil)
